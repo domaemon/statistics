@@ -37,7 +37,7 @@ def calc_days(prev_version, version):
     else:
         exit
 
-    print (end_date_obj - start_date_obj).days
+    return (end_date_obj - start_date_obj).days
 
 
 def gen_commit_objs_by_version(prev_version, version):
@@ -47,7 +47,6 @@ def gen_commit_objs_by_version(prev_version, version):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     (output, err) = p.communicate()
 
-    print "=== version: " + prev_version + "~" + version + " ==="
     for line in output.splitlines():
 
         # hashtag
@@ -149,8 +148,8 @@ def calc_network_density(network_matrix, name_list):
 
 os.chdir(os.getenv("HOME") + '/src/linux')
 
-prev_version="v3.6"
-versions = ["v3.7", "v3.8", "v3.9"]
+prev_version="v3.0"
+versions = ["v3.1", "v3.2", "v3.3", "v3.4", "v3.5", "v3.6", "v3.7", "v3.8", "v3.9"]
 commit_objs_by_version = {}
 network_matrix_by_version = {}
 days_by_version = {}
@@ -163,6 +162,7 @@ for version in versions:
 
     days = calc_days(prev_version, version)
     days_by_version[version] = days
+    print "=== " + prev_version + "~" + version + " " + str(days) + "days ==="
 
     name_list = gen_name_list(commit_objs)
 
