@@ -4,26 +4,16 @@
 #
 import subprocess
 import re
+import os
 from datetime import date, datetime
 
-commit_obj_by_version = {}
+#command = "git tag"
+#p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+#(output, err) = p.communicate()
+#versions = output.splitlines()
 
-command = "git tag"
-p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-(output, err) = p.communicate()
-versions = output.splitlines()
-
-prev_version="v2.6.12"
-
-###
-prev_version="v3.8"
-versions = ["v3.9"]
-###
-
-commit_objs_by_version = {}
-
-for version in versions:
-    commit_objs_by_version[version] = []
+def gen_commit_objs_by_version(prev_version, version):
+    commit_objs = []
 
     command = 'git log ' + prev_version + '..' + version
     p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
@@ -42,7 +32,7 @@ for version in versions:
             commit_obj['author'] = None
             commit_obj['date'] = None
             commit_obj['network'] = []
-            commit_objs_by_version[version].append(commit_obj)
+            commit_objs.append(commit_obj)
 
         # author
         m = re.match('Author: ((.)+) <(.)+>', line)
@@ -71,60 +61,59 @@ for version in versions:
         if (m):
             commit_obj['network'].append(m.group(1))
 
-        prev_version = version
+    return commit_objs
 
+def gen_name_list(commit_objs):
 
-#def gen_commit_obj(prev_version, version):
-#    return commit_obj
-
-
-
-#####
-print "here goes the network matrix initialization"
-name_list_orig = []
-name_list = []
-
-network_matrix_by_version = {}
-network_matrix_by_version['v3.9'] = {}
-
-### creating the name list ###
-
-for commit_obj in commit_objs_by_version['v3.9']:
-    for name in commit_obj['network']:
-        # add the signed-off-by, acked-by, reviewed-by people
-        name_list_orig.append(name)
-
-name_list = sorted(set(name_list_orig))
-
-### initializing the sn matrix ###
-
-for from_name in name_list:
-    network_matrix_by_version['v3.9'][from_name] = {}
-
-    for to_name in name_list:
-        network_matrix_by_version['v3.9'][from_name][to_name] = 0
-        
-#####
-print "here goes the network_matrix for specific version"
-
-for commit_obj in commit_objs_by_version['v3.9']:
-
-    network_size = len(commit_obj['network'])
-    if (network_size > 1):
-        for cnt in (range(network_size - 1)):
-            from_name = commit_obj['network'][cnt]
-            to_name   = commit_obj['network'][cnt + 1]
-            print from_name, to_name
-            network_matrix_by_version['v3.9'][from_name][to_name] += 1
-
-print "here we print the network matrix"
-
-for from_name in name_list:
-    print
-    for to_name in name_list:
-        print network_matrix_by_version['v3.9'][from_name][to_name],
-
-
-            
-            
+    return name_list
     
+def gen_network_matrix(commit_objs):
+    # generating name_list
+    name_list_orig = []
+    name_list = []
+
+    for commit_obj in commit_objs:
+        for name in commit_obj['network']:
+            # add the signed-off-by, acked-by, reviewed-by people
+            name_list_orig.append(name)
+
+    name_list = sorted(set(name_list_orig))
+
+    # init network_matrix
+    network_matrix = {}
+    for from_name in name_list:
+        network_matrix[from_name] = {}
+
+        for to_name in name_list:
+            network_matrix[from_name][to_name] = 0
+    
+    # compute network_matrix
+    for commit_obj in commit_objs:
+        network_size = len(commit_obj['network'])
+        if (network_size > 1):
+            for cnt in (range(network_size - 1)):
+                from_name = commit_obj['network'][cnt]
+                to_name   = commit_obj['network'][cnt + 1]
+                print from_name, to_name
+                network_matrix[from_name][to_name] += 1
+
+    return network_matrix
+
+######
+
+os.chdir(os.getenv("HOME") + '/src/linux')
+
+prev_version="v3.9-rc8"
+versions = ["v3.9"]
+commit_objs_by_version = {}
+network_matrix_by_version = {}
+
+### commit_objs_by_version is generated ###
+for version in versions:
+    commit_objs = gen_commit_objs_by_version(prev_version, version)
+    commit_objs_by_version[version] = commit_objs
+    network_matrix_by_version[version] = gen_network_matrix(commit_objs)
+    print network_matrix_by_version[version]
+
+    prev_version = version
+
