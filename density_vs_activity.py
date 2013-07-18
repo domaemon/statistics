@@ -22,8 +22,8 @@ def calc_days(prev_version, version):
     if (m):
         date_string = m.group(1) + " " + m.group(2)
         date_obj = datetime.strptime(date_string, '%b %d %Y').date()
-        end_date_obj = date_obj
-        end_date_string = date_string
+        version_release_date_obj = date_obj
+        version_release_date_string = date_string
     else:
         exit
 
@@ -35,14 +35,14 @@ def calc_days(prev_version, version):
     if (m):
         date_string = m.group(1) + " " + m.group(2)
         date_obj = datetime.strptime(date_string, '%b %d %Y').date()
-        start_date_obj = date_obj
-        start_date_string = date_string
+        prev_version_release_date_obj = date_obj
+        prev_version_release_date_string = date_string
     else:
         exit
 
-    delta = (end_date_obj - start_date_obj).days
+    delta = (version_release_date_obj - prev_version_release_date_obj).days
 
-    return (start_date_string, end_date_string, delta)
+    return (version_release_date_string, delta)
 
 
 def calc_changes(prev_version, version):
@@ -160,7 +160,6 @@ def calc_network_density(network_matrix, name_list):
 
     len_name_list = len(name_list)
     density = float(lines_cnt) / float((len_name_list) * (len_name_list - 1))
-    print density
     return density
 
 
@@ -169,20 +168,20 @@ def calc_network_density(network_matrix, name_list):
 
 os.chdir(os.getenv("HOME") + '/src/linux')
 
-prev_version="v3.1"
-versions = ["v3.2", "v3.3", "v3.4", "v3.5", "v3.6", "v3.7", "v3.8", "v3.9"]
+prev_version="v2.6.12"
+versions = ["v2.6.13", "v2.6.14", "v2.6.15", "v2.6.16", "v2.6.17", "v2.6.18", "v2.6.19", "v2.6.20", "v2.6.21", "v2.6.22", "v2.6.23", "v2.6.24", "v2.6.25", "v2.6.26", "v2.6.27", "v2.6.28", "v2.6.29", "v2.6.30", "v2.6.31", "v2.6.32", "v2.6.33", "v2.6.34", "v2.6.35", "v2.6.36", "v2.6.37", "v2.6.38", "v2.6.39", "v3.0", "v3.1", "v3.2", "v3.3", "v3.4", "v3.5", "v3.6", "v3.7", "v3.8", "v3.9", "v3.10"]
 
 csvfile_name = "./density_vs_activity.csv"
 with open(csvfile_name, 'w') as csvfile:
     writer = csv.writer(csvfile)
 
-    writer.writerow(["version", "start_date", "end_date", "days", "density", "pathces", "files_changed", "lines_inserted", "lines_deleted"])
+    writer.writerow(["version", "release_date", "days", "contributors", "density", "patches", "files_changed", "lines_inserted", "lines_deleted"])
 
 ### commit_objs_by_version is generated ###
     for version in versions:
 
-        (start_date_string, end_date_string, days) = calc_days(prev_version, version)
-        print "=== " + prev_version + "~" + version + " " + str(days) + " days ==="
+        (version_release_date_string, days) = calc_days(prev_version, version)
+        print "=== " + prev_version + ".." + version + " " + str(days) + " days ==="
 
         # commit_objs consists of commit_obj (includes social network)
         commit_objs = gen_commit_objs(prev_version, version)
@@ -190,6 +189,7 @@ with open(csvfile_name, 'w') as csvfile:
 
         # name list
         name_list = gen_name_list(commit_objs)
+        contributors = len(name_list)
         # network matrix
         network_matrix = calc_network_matrix(commit_objs, name_list)
         # network density
@@ -197,7 +197,9 @@ with open(csvfile_name, 'w') as csvfile:
         # added/removed lines
         (files_changed, lines_inserted, lines_deleted) = calc_changes(prev_version, version)
         
-        writer.writerow([version, start_date_string, end_date_string, days, density, patches, files_changed, lines_inserted, lines_deleted])
+        print version, version_release_date_string, days, contributors, density, patches, files_changed, lines_inserted, lines_deleted
+
+        writer.writerow([version, version_release_date_string, days, contributors, density, patches, files_changed, lines_inserted, lines_deleted])
 
         prev_version = version
 
