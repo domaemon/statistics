@@ -2,10 +2,19 @@
 #
 # Copyright Makoto Sugano
 #
+import os
 import csv
 import subprocess
 from datetime import date, datetime
 from bs4 import BeautifulSoup
+
+def increment_month(sourcedate):
+    month = sourcedate.month
+    year = sourcedate.year + month / 12
+    month = month % 12 + 1
+    day = 1
+
+    return date(year, month, day)
 
 # TODO: This should be a nested function
 def report_level_and_to_name(li_tag):
@@ -119,34 +128,41 @@ def calc_density(network_matrix, name_list):
 
 
 init_date_obj = date(2005, 06, 01) # from  May 2007
-last_date_obj = date(2005, 08, 01) # until June 2013
+last_date_obj = date(2013, 06, 01) # until June 2013
 
 # http://lkml.indiana.edu/hypermail/linux/kernel/0506.0/index.html
 
 def main():
     curr_date_obj = init_date_obj
 
-    while True:
-        year_string = curr_date_obj.strftime("%y")
-        month_string = curr_date_obj.strftime("%m")
-        year_month_string = curr_date_obj.strftime("%Y-%m")
+    csvfile_name = os.getenv("HOME") + "/Dropbox/src/statistics/lkml_density_over_time.csv"
+    with open(csvfile_name, 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["month_string", "contributors", "density"])
 
-        # wget the file
-        # 1. record the network connection
-        # 2. generate the name list
-        network_matrix = gen_network_matrix(year_string, month_string)
-        name_list = gen_name_list(network_matrix)
-#        print_network_matrix(network_matrix, name_list)
+        while True:
+            year_string = curr_date_obj.strftime("%y")
+            month_string = curr_date_obj.strftime("%m")
+            year_month_string = curr_date_obj.strftime("%Y-%m")
+
+            # wget the file
+            # 1. record the network connection
+            # 2. generate the name list
+            network_matrix = gen_network_matrix(year_string, month_string)
+            name_list = gen_name_list(network_matrix)
+#            print_network_matrix(network_matrix, name_list)
         
-        # === Directional Density ===
-        density = calc_density(network_matrix, name_list)
-        print year_month_string, len(name_list), density
+            # === Directional Density ===
+            density = calc_density(network_matrix, name_list)
+            print year_month_string, len(name_list), density
+            writer.writerow([year_month_string, len(name_list), density])
 
-        if curr_date_obj == last_date_obj:
-            break;
-        else:
-            curr_date_obj = increment_month(curr_date_obj)
+            if curr_date_obj == last_date_obj:
+                break;
+            else:
+                curr_date_obj = increment_month(curr_date_obj)
 
+            
 
 if __name__ == '__main__':
   main()
