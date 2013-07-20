@@ -57,7 +57,13 @@ def report_level_and_to_name(li_tag):
     return level, to_name
 
 def extract_nickname(li_tag):
-    name = li_tag.em.string.strip().encode('utf-8')
+    if li_tag.em == None:
+        name = "Unidentified"
+    else:
+        name = li_tag.em.string.strip().encode('utf-8')
+        if name == 'Message not available':
+            name = "Unidentified"
+            
     return name
 
 def gen_name_list(network_matrix):
@@ -85,6 +91,7 @@ def print_network_matrix(network_matrix, name_list):
 def gen_network_matrix(year_string, month_string):
 # === Initialization ===
     network_matrix = {}
+    num_mails = 0
 
 # === From and To ===
     for cnt in range(4):
@@ -98,8 +105,13 @@ def gen_network_matrix(year_string, month_string):
 
         for li_tag in soup.find_all("li"):
             from_name = extract_nickname(li_tag)
+
+            # count the mails where the from_name is valid
+            if from_name != 'Unidentified':
+                num_mails += 1
+
+            # check the level of the thread (0, 1, 2, 3) and the parent (to_name)
             (level, to_name) = report_level_and_to_name(li_tag)
-#            print level, from_name, to_name
 
             # Update the Matrix
             if to_name != None:
@@ -111,7 +123,10 @@ def gen_network_matrix(year_string, month_string):
                 else:
                     network_matrix[from_name][to_name] += 1
 
-    return network_matrix
+#                print level, from_name, to_name
+
+    return num_mails, network_matrix
+
 
 def calc_density(network_matrix, name_list):
     lines_cnt = 0 # network lines
@@ -127,7 +142,14 @@ def calc_density(network_matrix, name_list):
     return density
 
 
-init_date_obj = date(2005, 06, 01) # from  May 2007
+#init_date_obj = date(2005, 06, 01) # from  June 2007
+#last_date_obj = date(2008, 06, 01) # until June 2013
+
+init_date_obj = date(2008, 07, 01) # from  June 2007
+#init_date_obj = date(2008, 11, 01) # from  June 2007
+last_date_obj = date(2010, 06, 01) # until June 2013
+
+init_date_obj = date(2010, 07, 01) # from  June 2007
 last_date_obj = date(2013, 06, 01) # until June 2013
 
 # http://lkml.indiana.edu/hypermail/linux/kernel/0506.0/index.html
@@ -135,10 +157,10 @@ last_date_obj = date(2013, 06, 01) # until June 2013
 def main():
     curr_date_obj = init_date_obj
 
-    csvfile_name = os.getenv("HOME") + "/Dropbox/src/statistics/lkml_density_over_time.csv"
+    csvfile_name = os.getenv("HOME") + "/Dropbox/src/statistics/lkml_density_over_time-3.csv"
     with open(csvfile_name, 'w') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["month_string", "contributors", "density"])
+        writer.writerow(["month_string", "num_mails", "contributors", "density"])
 
         while True:
             year_string = curr_date_obj.strftime("%y")
@@ -148,14 +170,14 @@ def main():
             # wget the file
             # 1. record the network connection
             # 2. generate the name list
-            network_matrix = gen_network_matrix(year_string, month_string)
+            num_mails, network_matrix = gen_network_matrix(year_string, month_string)
             name_list = gen_name_list(network_matrix)
 #            print_network_matrix(network_matrix, name_list)
         
             # === Directional Density ===
             density = calc_density(network_matrix, name_list)
-            print year_month_string, len(name_list), density
-            writer.writerow([year_month_string, len(name_list), density])
+            print year_month_string, num_mails, len(name_list), density
+            writer.writerow([year_month_string, num_mails, len(name_list), density])
 
             if curr_date_obj == last_date_obj:
                 break;
