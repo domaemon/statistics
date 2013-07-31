@@ -134,8 +134,12 @@ os.chdir(os.getenv("HOME") + '/src/linux')
 
 # init_date_obj = date(2005, 05, 01) # from April 2005
 # last_date_obj = date(2006, 10, 01) # until September 2006
-init_date_obj = date(2005, 07, 01) # from  June 2005
-last_date_obj = date(2013, 07, 01) # until June 2013
+
+# init_date_obj = date(2005, 07, 01) # from  June 2005
+# last_date_obj = date(2013, 07, 01) # until June 2013
+
+init_date_obj = date(2005, 06, 01) # from  June 2005
+last_date_obj = date(2005, 10, 01) # until July 2013
 
 def main():
     curr_date_obj = init_date_obj
